@@ -11,8 +11,18 @@ const userSchema = new Schema({
     required: [true, 'Lütfen bir email adresi giriniz'],
   },
   password: String,
-  dataCreated: Date,
-  dateModified: Date,
+  dataCreated: {
+    type: Date,
+    default: new Date(),
+  },
+  dateModified: {
+    type: Date,
+    default: new Date(),
+  },
+  lastLogin: {
+    type: Date,
+    default: new Date(),
+  },
 })
 
 export default mongoose.model('User', userSchema)

@@ -17,35 +17,41 @@ mongoose.connect(
   }
 )
 
-const users = [
-  {
-    _id: 'user123',
-    firstnName: 'mertcan',
-    lastName: 'cetinkaya',
-    email: 'mertcan@mertcan.com',
-    password: '1234',
-  },
-]
-
 const route = () => {
   const router = new express.Router()
   router.route('/login').post((req, res) => {
     const { email, password } = req.body
 
-    const user = users.find((user) => user.email === email)
-    if (!user) {
-      res.send({
-        status: false,
-        message: 'Böyle bir email adresi yok!!!',
-      })
-    } else {
-      if (user.password === password) {
-        const token = jwt.sign({ userId: user._id }, config.jwtSecret)
-        res.send({ status: true, token: token })
+    User.findOne({ email: email }).then((user) => {
+      if (!user) {
+        res.send({
+          status: false,
+          message: 'Böyle bir email adresi yok!!!',
+        })
       } else {
-        res.send({ status: false, message: 'hatalı sifre' })
+        if (
+          user.password ===
+          crypto
+            .createHmac('sha256', config.passSecret)
+            .update(password)
+            .digest('hex')
+        ) {
+          const token = jwt.sign({ userId: user._id }, config.jwtSecret)
+
+          User.update(
+            { email: email },
+            {
+              $set: {
+                lastLogin: new Date(),
+              },
+            }
+          ).then(() => {})
+          res.send({ status: true, token: token })
+        } else {
+          res.send({ status: false, message: 'hatalı sifre' })
+        }
       }
-    }
+    })
   })
 
   router.route('/signup').post((req, res) => {
@@ -58,8 +64,6 @@ const route = () => {
     const newUser = new User({
       email: email,
       password: passwordHashed,
-      dateCreated: new Date(),
-      dateModified: new Date(),
     })
     newUser.save().then(
       (data) => {
@@ -69,7 +73,6 @@ const route = () => {
         res.send({ status: false, error: err })
       }
     )
-  
   })
   return router
 }

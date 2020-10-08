@@ -7,8 +7,9 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 AppRouter(app)
+
 app.get('/', (req, res) => {
-  res.send('rest adpi')
+  res.send('rest api')
 })
 
 app.listen(3300, () => {
