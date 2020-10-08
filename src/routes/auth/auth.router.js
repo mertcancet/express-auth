@@ -1,6 +1,21 @@
 import express from 'express'
 import config from 'config'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
+import crypto from 'crypto'
+import User from '../../models/User'
+
+mongoose.connect(
+  'mongodb://localhost:27017/auth_db',
+  { useNewUrlParser: true, useUnifiedTopology: true },
+  (error) => {
+    if (!error) {
+      console.log('DB CONNECTION SUCCESFULL')
+    } else {
+      console.log('DB CONNECTION NOT SCCUESFULL')
+    }
+  }
+)
 
 const users = [
   {
@@ -31,6 +46,30 @@ const route = () => {
         res.send({ status: false, message: 'hatalı sifre' })
       }
     }
+  })
+
+  router.route('/signup').post((req, res) => {
+    const { email, password } = req.body
+    const passwordHashed = crypto
+      .createHmac('sha256', config.passSecret)
+      .update(password)
+      .digest('hex')
+
+    const newUser = new User({
+      email: email,
+      password: passwordHashed,
+      dateCreated: new Date(),
+      dateModified: new Date(),
+    })
+    newUser.save().then(
+      (data) => {
+        res.send({ status: true, user: data })
+      },
+      (err) => {
+        res.send({ status: false, error: err })
+      }
+    )
+  
   })
   return router
 }
